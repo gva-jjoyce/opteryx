@@ -41,13 +41,15 @@ KNOWN_EXTENSIONS = {
 
 
 class PartitionReaderNode(BasePlanNode):
-    def __init__(self, statistics:QueryStatistics, **config):
+    def __init__(self, statistics: QueryStatistics, **config):
         """
         The Partition Reader Node is responsible for reading a complete partition
         and returning a Relation.
         """
         self._partition = config.get("partition", "").replace(".", "/") + "/"
-        self._reader = config.get("reader", DiskStorage())
+        self._reader = config.get("reader")
+        if not self._reader:
+            self._reader = DiskStorage()
         self._partition_scheme = config.get("partition_scheme")
 
         self._statistics = statistics
@@ -60,7 +62,7 @@ class PartitionReaderNode(BasePlanNode):
     def __repr__(self):
         return self._partition
 
-    def execute(self, data_pages:Iterable) -> Iterable:
+    def execute(self, data_pages: Iterable) -> Iterable:
 
         # Get a list of all of the blobs in the partition.
         blob_list = self._reader.get_blob_list(self._partition)
@@ -76,15 +78,15 @@ class PartitionReaderNode(BasePlanNode):
             blob_list = self._partition_scheme.filter_blobs(blob_list)
 
         # If there's a zonemap for the partition, read it
-#        zonemap = {}
-#        zonemap_files = [blob for blob in blob_list if blob.endswith("/frame.metadata")]
-#        if len(zonemap_files) == 1:
-#            # read the zone map into a dictionary
-#            try:
-#                import orjson
-#                zonemap = orjson.loads(self._reader.read_blob(zonemap_files[0]))
-#            except:
-#                pass
+        #        zonemap = {}
+        #        zonemap_files = [blob for blob in blob_list if blob.endswith("/frame.metadata")]
+        #        if len(zonemap_files) == 1:
+        #            # read the zone map into a dictionary
+        #            try:
+        #                import orjson
+        #                zonemap = orjson.loads(self._reader.read_blob(zonemap_files[0]))
+        #            except:
+        #                pass
 
         for blob_name in blob_list:
 
@@ -98,7 +100,7 @@ class PartitionReaderNode(BasePlanNode):
                 continue
 
             # can we eliminate this blob using the BRIN?
-#            pass
+            #            pass
 
             # we're going to open this blob
             self._statistics.count_data_blobs_read += 1
@@ -119,4 +121,3 @@ class PartitionReaderNode(BasePlanNode):
             # yield this blob
             print(f"reader yielding {blob_name} {pyarrow_blob.shape}")
             yield pyarrow_blob
-

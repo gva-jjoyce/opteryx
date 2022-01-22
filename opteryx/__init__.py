@@ -22,8 +22,6 @@ threadsafety = 0
 paramstyle = "format"
 
 
-
-
 def connect(*args, **kwargs):
     return Connection(*args, **kwargs)
 
