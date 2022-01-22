@@ -76,7 +76,7 @@ OPERATOR_XLAT = {
     "LtEq": "<=",
     "Like": "LIKE",
     "NotLike": "NOT LIKE",
-    "InList": "IN"
+    "InList": "IN",
 }
 
 
@@ -92,9 +92,12 @@ def _build_dnf_filters(filters):
     if "Identifier" in filters:
         quote_style = filters["Identifier"].get("quote_style")
         if quote_style == "`" or quote_style is None:
-            return filters["Identifier"]["value"] # we're an identifier
-        if quote_style == "\"":
-            return (filters["Identifier"]["value"], OPTERYX_TYPES.VARCHAR) # we're a literal
+            return filters["Identifier"]["value"]  # we're an identifier
+        if quote_style == '"':
+            return (
+                filters["Identifier"]["value"],
+                OPTERYX_TYPES.VARCHAR,
+            )  # we're a literal
     if "Value" in filters:
         value = filters["Value"]
         if "SingleQuotedString" in value:
@@ -138,6 +141,7 @@ def _build_dnf_filters(filters):
         left = _build_dnf_filters(filters["IsNotNull"])
         return (left, "<>", None)
 
+
 def _extract_relations(ast):
     """ """
     relations = ast[0]["Query"]["body"]["Select"]["from"][0]
@@ -169,11 +173,12 @@ def _extract_projections(ast):
             if "Identifier" in unnamed:
                 return unnamed["Identifier"]["value"]
             if "Function" in attribute:
-                # {'Function': {'name': [{'value': 'APPROX_SIZE', 'quote_style': None}], 'args': [{'Unnamed': {'Identifier': {'value': 'name', 'quote_style': None}}}]  
+                # {'Function': {'name': [{'value': 'APPROX_SIZE', 'quote_style': None}], 'args': [{'Unnamed': {'Identifier': {'value': 'name', 'quote_style': None}}}]
                 raise NotImplementedError("functions are currently not suppored")
         if "ExprWithAlias" in attribute:
             # [{'ExprWithAlias': {'expr': {'Function': {'name': [{'value': 'APPROX_SIZE', 'quote_style': None}], 'args': [{'Unnamed': {'Identifier': {'value': 'name', 'quote_style': None}}}], 'over': None, 'distinct': False}}, 'alias': {'value': 'APPLE', 'quote_style': None}}}]
             raise NotImplementedError("aliases aren't supported")
+
     projection = [_inner(attribute) for attribute in projection]
     return projection
 
@@ -229,7 +234,9 @@ class QueryPlan(object):
         self.add_operator(
             "from", BlobReaderNode(statistics, partition=_extract_relations(ast))
         )
-        self.add_operator("where", SelectionNode(statistics, filter=_extract_selection(ast)))
+        self.add_operator(
+            "where", SelectionNode(statistics, filter=_extract_selection(ast))
+        )
         # self.add_operator("group", GroupByNode(ast["select"]["group_by"]))
         # self.add_operator("having", SelectionNode(ast["select"]["having"]))
         self.add_operator(

@@ -22,7 +22,9 @@ class BaseStorageAdapter(abc.ABC):
         *,
         dataset: str,
         partitioning: Iterable = ("year_{yyyy}", "month_{mm}", "day_{dd}"),
-        start_date: Union[datetime.datetime, datetime.date, str] = datetime.date.today(),
+        start_date: Union[
+            datetime.datetime, datetime.date, str
+        ] = datetime.date.today(),
         end_date: Union[datetime.datetime, datetime.date, str] = datetime.date.today(),
     ) -> List:
         """
@@ -43,13 +45,16 @@ class BaseStorageAdapter(abc.ABC):
         end_date = dates.parse_iso(end_date)
 
         partitions = []
-        # we're going to iterate over the date range and get the name of the partition for 
+        # we're going to iterate over the date range and get the name of the partition for
         # this dataset on this data - without knowing if the partition exists
         for n in range(int((end_date - start_date).days) + 1):
             import pathlib
+
             working_date = start_date + datetime.timedelta(n)
-            partitions.append(pathlib.Path(paths.build_path(path=dataset, date=working_date)))
-            
+            partitions.append(
+                pathlib.Path(paths.build_path(path=dataset, date=working_date))
+            )
+
         return partitions
 
     @abc.abstractmethod
